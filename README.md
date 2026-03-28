@@ -114,6 +114,8 @@ Lancer le script avec :
 python generateurMapAleatoire.py
 ```
 
+Par défaut, le programme ouvre une fenêtre système "Enregistrer sous" pour vous laisser choisir l'emplacement d'exportation de l'image.
+
 Choisir un fichier de sortie précis :
 
 ```bash
@@ -136,7 +138,9 @@ Le programme :
 
 L'image n'est plus enregistrée dans un chemin codé en dur.
 
-Par défaut, elle est exportée dans :
+Par défaut, le script ouvre un explorateur de fichiers pour vous laisser choisir le nom du fichier et le dossier de sortie.
+
+Si cette fenêtre est annulée ou ne peut pas s'ouvrir, l'image est exportée dans :
 
 ```python
 exports/map.png
