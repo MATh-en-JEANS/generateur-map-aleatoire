@@ -17,6 +17,7 @@ Fonctionnement :
 
 import random
 import os
+import argparse
 from itertools import combinations
 import matplotlib
 matplotlib.use("Agg")
@@ -628,9 +629,11 @@ def _dessiner_simulation_img(ax, carte, calendrier, jour_mort):
 
 # ── Fonction principale d'image ───────────────────────────────────────────────
 
-def generer_image(carte, calendrier, jour_mort, chemin="D:\math en jeans\images"):
+def generer_image(carte, calendrier, jour_mort, chemin):
     """Genere une image complete : graphe + calendrier + simulation."""
-    os.makedirs(os.path.dirname(chemin), exist_ok=True)
+    dossier = os.path.dirname(chemin)
+    if dossier:
+        os.makedirs(dossier, exist_ok=True)
 
     fig = plt.figure(figsize=(22, 12))
     fig.patch.set_facecolor("#0D1117")
@@ -671,9 +674,109 @@ def generer_image(carte, calendrier, jour_mort, chemin="D:\math en jeans\images"
     print(f"\n  Image sauvegardee : {chemin}")
 
 
+def normaliser_chemin_export(chemin_sortie):
+    """
+    Normalise le chemin d'export.
+
+    Si l'utilisateur fournit un dossier, le fichier `map.png` est ajoute.
+    Si aucun chemin n'est fourni, on utilise `exports/map.png`.
+    """
+    if not chemin_sortie:
+        chemin_sortie = os.path.join("exports", "map.png")
+
+    chemin_sortie = os.path.expanduser(chemin_sortie)
+
+    if os.path.isdir(chemin_sortie):
+        return os.path.join(chemin_sortie, "map.png")
+
+    _, extension = os.path.splitext(chemin_sortie)
+    if not extension:
+        return os.path.join(chemin_sortie, "map.png")
+
+    return chemin_sortie
+
+
+def choisir_chemin_export(chemin_defaut):
+    """
+    Ouvre une boite de dialogue pour choisir le fichier d'export.
+
+    Si la selection graphique est indisponible ou annulee, le chemin
+    par defaut est conserve.
+    """
+    try:
+        import tkinter as tk
+        from tkinter import filedialog
+    except ImportError:
+        print("\n  Selection graphique indisponible : tkinter n'est pas disponible.")
+        return chemin_defaut
+
+    initial_dir = os.path.dirname(chemin_defaut) or os.getcwd()
+    initial_file = os.path.basename(chemin_defaut) or "map.png"
+
+    try:
+        root = tk.Tk()
+        root.withdraw()
+        root.attributes("-topmost", True)
+
+        chemin = filedialog.asksaveasfilename(
+            title="Choisir l'emplacement d'exportation de l'image",
+            initialdir=initial_dir,
+            initialfile=initial_file,
+            defaultextension=".png",
+            filetypes=[
+                ("Image PNG", "*.png"),
+                ("Tous les fichiers", "*.*"),
+            ],
+        )
+        root.destroy()
+    except Exception as exc:
+        print("\n  Impossible d'ouvrir la selection graphique.")
+        print(f"  Export par defaut conserve : {chemin_defaut}")
+        print(f"  Detail : {exc}")
+        return chemin_defaut
+
+    if not chemin:
+        print("\n  Aucun emplacement selectionne.")
+        print(f"  Export par defaut conserve : {chemin_defaut}")
+        return chemin_defaut
+
+    if not os.path.splitext(chemin)[1]:
+        chemin += ".png"
+
+    return chemin
+
+
+def analyser_arguments():
+    """Analyse les arguments de la ligne de commande."""
+    parser = argparse.ArgumentParser(
+        description=(
+            "Genere une carte procedurale impossible a gagner et exporte "
+            "une image de synthese."
+        )
+    )
+    parser.add_argument(
+        "-o",
+        "--output",
+        help=(
+            "Chemin d'export de l'image. Vous pouvez fournir un fichier "
+            "(ex: exports/map.png) ou un dossier (ex: exports). "
+            "Si l'option est omise, une fenetre de selection s'ouvre."
+        ),
+    )
+    return parser.parse_args()
+
+
 # ── Point d'entree ────────────────────────────────────────────────────────────
 
 def main():
+    args = analyser_arguments()
+    chemin_image = normaliser_chemin_export(args.output)
+    if args.output:
+        print(f"\n  Export configure par argument : {chemin_image}")
+    else:
+        print("\n  Ouverture de la selection d'emplacement pour l'image...")
+        chemin_image = choisir_chemin_export(chemin_image)
+
     print(f"\n{SEP}")
     print("  GENERATEUR PROCEDURAL DE MAP")
     print("  Jeu Strategique - Tous les chemins menent au Palais")
@@ -698,7 +801,6 @@ def main():
     print(f"{SEP}\n")
 
     # Generation de l'image
-    chemin_image = os.path.join("D:\math en jeans\images\map.png")
     generer_image(carte, calendrier, jour_mort, chemin_image)
 
 
